@@ -1,4 +1,4 @@
-import React,{useEffect,useReducer} from 'react'
+import {useEffect,useReducer} from 'react'
 import axios from "axios";
 import TodoItem from './components/TodoItem';
 import FilterButtons from './components/FilterButtons';
@@ -183,6 +183,8 @@ useEffect(() => {
 }
 
 // json-server --watch db.json --port 3001
+// npx json-server --watch db.json --port 3001
+
 // npm run dev
 // npx cypress open
 // npx cypress run
