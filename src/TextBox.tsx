@@ -5,7 +5,7 @@ import FilterButtons from './components/FilterButtons';
 import SearchBox from './components/SearchBox';
 import { normalizePath } from 'vite';
 import cypress from 'cypress';
-import { supabase } from '../supabaseClient'
+import { supabase } from './lib/supabaseClient'
 
 
 

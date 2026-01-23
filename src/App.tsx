@@ -2,7 +2,7 @@ import { Routes, Route, Link } from "react-router-dom";
 import TextBox from "./TextBox";
 import WeatherBox from "./components/WeatherBox";
 import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient";
+import { supabase } from "./lib/supabaseClient";
 
 
 export default function App() {
