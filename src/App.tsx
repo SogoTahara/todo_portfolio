@@ -7,6 +7,8 @@ import { supabase } from "../supabaseClient";
 
 export default function App() {
   
+  const [user, setUser] = useState<any>(null);
+
 const [pages, setPages] = useState<
   { name: string; path: string }[]
 >([]);
@@ -36,6 +38,19 @@ const [pages, setPages] = useState<
   };
 
   fetchPages();
+}, []);
+
+useEffect(() => {
+  const getUser = async () => {
+    const { data } = await supabase.auth.getUser();
+    setUser(data.user);
+  };
+
+  getUser();
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+  });
 }, []);
 
 
@@ -85,14 +100,38 @@ const deletePage = async (path: string) => {
   return (
     <div className="container">
       <h1>ポートフォリオ</h1>
+{!user ? (
+  <button
+    className="btn btn-sm btn-outline-primary"
+    onClick={async () => {
+      const email = prompt("メールアドレス");
+      const password = prompt("パスワード");
 
-      {/* <nav className="mb-3">
-        {pages.map((page) => (
-          <Link key={page.path} to={page.path} className="me-2">
-            {page.name}
-          </Link>
-        ))}
-      </nav> */}
+      if (!email || !password) return;
+
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      await supabase.auth.signUp({
+  email,
+  password,
+});
+
+    }}
+  >
+    ログイン
+  </button>
+) : (
+  <button
+    className="btn btn-sm btn-outline-secondary"
+    onClick={() => supabase.auth.signOut()}
+  >
+    ログアウト
+  </button>
+)}
+
       <nav className="mb-3">
   <Link to="/" className="me-2">Home</Link>
   <Link to="/weather" className="me-2">Weather</Link>
@@ -102,19 +141,21 @@ const deletePage = async (path: string) => {
     <Link to={page.path} className="me-1">
       {page.name}
     </Link>
-    <button
+    {user && (
+      <button
       className="btn btn-sm btn-outline-danger px-1 py-0"
       onClick={() => deletePage(page.path)}
     >
       ×
     </button>
+    )}
   </span>
 ))}
 
 
 </nav>
 
-
+{user && (
      <div>
         <input
           type="text"
@@ -127,6 +168,7 @@ const deletePage = async (path: string) => {
           ページ追加
         </button>
       </div>
+)}
 
  <Routes>
   <Route path="/" element={<TextBox pagePath="/" />} />
