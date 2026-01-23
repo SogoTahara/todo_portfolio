@@ -16,6 +16,10 @@ interface Todo {
   isCompleted: boolean;
 }
 
+type Props = {
+  pagePath: string;
+};
+
 const initialState = {
   texts: '',
   list:  [] as Todo[],
@@ -73,8 +77,7 @@ case 'CONFIRM_EDIT':
   }
 }
 
-
-export default function TextBox() {
+export default function TextBox({ pagePath }: Props) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
  
@@ -111,21 +114,27 @@ export default function TextBox() {
 
     dispatch({ type: 'CONFIRM_EDIT' }); 
 };
- 
-useEffect(() => {
+
+ useEffect(() => {
   const fetchTodos = async () => {
-    const { data, error } = await supabase.from('todos').select('*');
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("page_path", pagePath);
+
     if (!error && data) {
-      const todos: Todo[] = data.map(todo => ({
+      const todos = data.map(todo => ({
         id: todo.id,
         text: todo.text,
-        isCompleted: todo.is_completed, 
+        isCompleted: todo.is_completed,
       }));
-      dispatch({ type: 'SET_LIST', payload: todos });
+      dispatch({ type: "SET_LIST", payload: todos });
     }
   };
+
   fetchTodos();
-}, []);
+}, [pagePath]);
+
 
 
 
@@ -173,7 +182,13 @@ useEffect(() => {
 
     const { data, error } = await supabase
       .from('todos')
-      .insert([{ text: state.texts, is_completed: false }])
+.insert([
+  {
+    text: state.texts,
+    is_completed: false,
+    page_path: pagePath,
+  },
+])
       .select();
 
     if (!error && data) {

@@ -7,7 +7,9 @@ import { supabase } from "../supabaseClient";
 
 export default function App() {
   
-  const [pages, setPages] = useState<{ path: string; name: string }[]>([]);
+const [pages, setPages] = useState<
+  { name: string; path: string }[]
+>([]);
 
 
   const [newPage, setNewPage] = useState("");
@@ -19,13 +21,18 @@ export default function App() {
       .select("*");
 
     if (!error && data) {
-      setPages(
-        data.map((page) => ({
-          path: page.path,
-          name: page.name,
-        }))
-      );
-    }
+  setPages(
+    data
+      .filter(
+        (page) => page.path !== "/" && page.path !== "/weather"
+      )
+      .map((page) => ({
+        path: page.path,
+        name: page.name,
+      }))
+  );
+}
+
   };
 
   fetchPages();
@@ -95,11 +102,17 @@ const addPage = async () => {
       </div>
 
  <Routes>
-  <Route path="/" element={<TextBox />} />
+  <Route path="/" element={<TextBox pagePath="/" />} />
+
   <Route path="/weather" element={<WeatherBox />} />
 
   {pages.map((page) => (
-    <Route key={page.path} path={page.path} element={<TextBox />} />
+   <Route
+  key={page.path}
+  path={page.path}
+  element={<TextBox pagePath={page.path} />}
+/>
+
   ))}
 </Routes>
 
