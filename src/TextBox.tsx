@@ -5,6 +5,8 @@ import FilterButtons from './components/FilterButtons';
 import SearchBox from './components/SearchBox';
 import { normalizePath } from 'vite';
 import cypress from 'cypress';
+import { supabase } from '../supabaseClient'
+
 
 
 
@@ -35,39 +37,30 @@ function reducer(state: typeof initialState, action: any): typeof initialState {
   };
 
 
-     case 'SWITCH_TODO':
-  const switchTarget = state.list.find(item => item.id === action.payload);
-  if (!switchTarget) return state;
-
-  const toggled = { ...switchTarget, isCompleted: !switchTarget.isCompleted };
-  axios.put(`http://localhost:3001/todos/${action.payload}`, toggled);
-
+ case 'SWITCH_TODO':
   return {
     ...state,
-    list: state.list.map((item) =>
-      item.id === action.payload ? toggled : item
+    list: state.list.map(item =>
+      item.id === action.payload ? { ...item, isCompleted: !item.isCompleted } : item
     ),
   };
+
 
     case 'EDIT':
       const target = state.list.find((item) => item.id === action.payload);
       return target ? { ...state, editId: target.id, editText: target.text } : state;
     case 'SET_EDIT_TEXT':
       return { ...state, editText: action.payload };
-   case 'CONFIRM_EDIT':
-  axios.put(`http://localhost:3001/todos/${state.editId}`, {
-    ...state.list.find(item => item.id === state.editId),
-    text: state.editText,
-  });
-
+case 'CONFIRM_EDIT':
   return {
     ...state,
-    list: state.list.map((item) =>
+    list: state.list.map(item =>
       item.id === state.editId ? { ...item, text: state.editText } : item
     ),
     editId: null,
     editText: '',
   };
+
 
     case 'SET_LIST':
     return { ...state, list: action.payload };
@@ -84,25 +77,57 @@ function reducer(state: typeof initialState, action: any): typeof initialState {
 export default function TextBox() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
+ 
+ const toggleTodo = async (todo: Todo) => {
+  const { error } = await supabase
+    .from('todos')
+    .update({ is_completed: !todo.isCompleted })
+    .eq('id', todo.id);
 
-useEffect(() => {
-  const fetchTodos = async () => {
+  if (!error) {
+    dispatch({ type: 'SWITCH_TODO', payload: todo.id });
+  }
+};
+
+
+ 
+  const deleteTodo = async (id: number) => {
+    await supabase.from('todos').delete().eq('id', id);
+    dispatch({ type: 'DELETE_TODO', payload: id });
+  };
+
+  const confirmEditTodo = async () => {
+    if (state.editId === null) return;
+
     const { data, error } = await supabase
       .from('todos')
-      .select('*')
+      .update({ text: state.editText })
+      .eq('id', state.editId);
 
-    if (!error) {
-      dispatch({ type: 'SET_LIST', payload: data })
+    if (error) {
+      alert('更新に失敗しました');
+      return;
     }
-  }
 
-  fetchTodos()
-}, [])
+    dispatch({ type: 'CONFIRM_EDIT' }); 
+};
+ 
+useEffect(() => {
+  const fetchTodos = async () => {
+    const { data, error } = await supabase.from('todos').select('*');
+    if (!error && data) {
+      const todos: Todo[] = data.map(todo => ({
+        id: todo.id,
+        text: todo.text,
+        isCompleted: todo.is_completed, 
+      }));
+      dispatch({ type: 'SET_LIST', payload: todos });
+    }
+  };
+  fetchTodos();
+}, []);
 
-const deleteTodo = async (id: number) => {
-  await supabase.from('todos').delete().eq('id', id)
-  dispatch({ type: 'DELETE_TODO', payload: id })
-}
+
 
 
 
@@ -131,7 +156,7 @@ const deleteTodo = async (id: number) => {
         placeholder="タスクを追加"
       />
       
-     <button
+<button
   data-test="add-task"
   className="btn btn-primary"
   style={{ height: '45px' }}
@@ -148,26 +173,23 @@ const deleteTodo = async (id: number) => {
 
     const { data, error } = await supabase
       .from('todos')
-      .insert([
-        { text: state.texts, is_completed: false }
-      ])
+      .insert([{ text: state.texts, is_completed: false }])
       .select();
 
-    if (error) {
-      alert('追加に失敗しました');
-      return;
+    if (!error && data) {
+      const newTodo: Todo = {
+        id: data[0].id,
+        text: data[0].text,
+        isCompleted: data[0].is_completed, // 変換
+      };
+      dispatch({ type: 'SET_LIST', payload: [...state.list, newTodo] });
+      dispatch({ type: 'SET_TEXTS', payload: '' });
     }
-
-    dispatch({
-      type: 'SET_LIST',
-      payload: [...state.list, data![0]],
-    });
-
-    dispatch({ type: 'SET_TEXTS', payload: '' });
   }}
 >
   追加
 </button>
+
 
      </div>
 
@@ -186,8 +208,12 @@ const deleteTodo = async (id: number) => {
             editText={state.editText}
             setEditText={(val) => dispatch({ type: 'SET_EDIT_TEXT', payload: val })}
             Edit={(id) => dispatch({ type: 'EDIT', payload: id })}
-            ConfirmEdit={() => dispatch({ type: 'CONFIRM_EDIT' })}
-            Switch={(id) => dispatch({ type: 'SWITCH_TODO', payload: id })}
+            ConfirmEdit={() => confirmEditTodo()} 
+            Switch={(id) => {
+              const todo = state.list.find(t => t.id === id);
+              if (todo) toggleTodo(todo);
+            }}
+
             Delete={(id) => deleteTodo(id)}
 
           />
@@ -203,6 +229,8 @@ const deleteTodo = async (id: number) => {
     </div>
   );
 }
+
+
 
 // json-server --watch db.json --port 3001
 // npx json-server --watch db.json --port 3001
