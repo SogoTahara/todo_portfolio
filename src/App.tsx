@@ -64,6 +64,23 @@ const addPage = async () => {
   setNewPage("");
 };
 
+const deletePage = async (path: string) => {
+  const confirmDelete = window.confirm("このページを削除しますか？");
+
+  if (!confirmDelete) return;
+
+  const { error } = await supabase
+    .from("pages")
+    .delete()
+    .eq("path", path);
+
+  if (error) {
+    alert("削除に失敗しました");
+    return;
+  }
+
+  setPages(pages.filter((page) => page.path !== path));
+};
 
   return (
     <div className="container">
@@ -80,11 +97,21 @@ const addPage = async () => {
   <Link to="/" className="me-2">Home</Link>
   <Link to="/weather" className="me-2">Weather</Link>
 
-  {pages.map((page) => (
-    <Link key={page.path} to={page.path} className="me-2">
+ {pages.map((page) => (
+  <span key={page.path} className="me-3">
+    <Link to={page.path} className="me-1">
       {page.name}
     </Link>
-  ))}
+    <button
+      className="btn btn-sm btn-outline-danger px-1 py-0"
+      onClick={() => deletePage(page.path)}
+    >
+      ×
+    </button>
+  </span>
+))}
+
+
 </nav>
 
 
