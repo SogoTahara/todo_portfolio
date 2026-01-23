@@ -1,40 +1,85 @@
 import { Routes, Route, Link } from "react-router-dom";
 import TextBox from "./TextBox";
 import WeatherBox from "./components/WeatherBox";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
+
 
 export default function App() {
   
-  const [pages, setPages] = useState<{ path: string; name: string }[]>([
-    { path: "/", name: "Todoリスト" },
-    { path: "/weather", name: "天気" },
-  ]);
+  const [pages, setPages] = useState<{ path: string; name: string }[]>([]);
+
 
   const [newPage, setNewPage] = useState("");
 
-  const addPage = () => {
-    if (!newPage) return;
-    const path = "/" + newPage;
-   
-    if (pages.filter((p) => p.path === path).length>0) {
-    alert("同じページ名が存在します");
-    return; 
-  }
-    setPages([...pages, { path, name: newPage }]);
-    setNewPage("");
+  useEffect(() => {
+  const fetchPages = async () => {
+    const { data, error } = await supabase
+      .from("pages")
+      .select("*");
+
+    if (!error && data) {
+      setPages(
+        data.map((page) => ({
+          path: page.path,
+          name: page.name,
+        }))
+      );
+    }
   };
+
+  fetchPages();
+}, []);
+
+
+const addPage = async () => {
+  if (!newPage) return;
+
+  const path = "/" + newPage;
+
+ 
+  if (pages.some((p) => p.path === path)) {
+    alert("同じページ名が存在します");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("pages")
+    .insert([{ path, name: newPage }])
+    .select();
+
+  if (error) {
+    alert("ページ追加に失敗しました");
+    return;
+  }
+
+  setPages([...pages, { path, name: newPage }]);
+  setNewPage("");
+};
+
 
   return (
     <div className="container">
       <h1>ポートフォリオ</h1>
 
-      <nav className="mb-3">
+      {/* <nav className="mb-3">
         {pages.map((page) => (
           <Link key={page.path} to={page.path} className="me-2">
             {page.name}
           </Link>
         ))}
-      </nav>
+      </nav> */}
+      <nav className="mb-3">
+  <Link to="/" className="me-2">Home</Link>
+  <Link to="/weather" className="me-2">Weather</Link>
+
+  {pages.map((page) => (
+    <Link key={page.path} to={page.path} className="me-2">
+      {page.name}
+    </Link>
+  ))}
+</nav>
+
 
      <div>
         <input
@@ -49,15 +94,16 @@ export default function App() {
         </button>
       </div>
 
-      <Routes>
-        {pages.map((page) =>
-          page.path === "/weather" ? (
-            <Route key={page.path} path={page.path} element={<WeatherBox />} />
-          ) : (
-            <Route key={page.path} path={page.path} element={<TextBox />} />
-          )
-        )}
-      </Routes>
+ <Routes>
+  <Route path="/" element={<TextBox />} />
+  <Route path="/weather" element={<WeatherBox />} />
+
+  {pages.map((page) => (
+    <Route key={page.path} path={page.path} element={<TextBox />} />
+  ))}
+</Routes>
+
+
     </div>
   );
 }
