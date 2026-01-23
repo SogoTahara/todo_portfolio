@@ -1,8 +1,9 @@
 # ToDo + 天気要素アプリ 
 
-フロントエンド学習用に制作した ToDo アプリです。  
-タスク管理に加えて、OpenWeather API を利用して「今日の東京の天気」も表示します。  
-React/TypeScript,テストの基礎を実践的に学びました。
+フロントエンド学習用に制作した ToDo アプリです。
+Supabase を使ったタスク管理機能、ログイン機能に加えて、OpenWeather API を利用した「天気表示」を実装しています。
+ログイン なしでも利用可能 ですが、ログインすることでユーザーごとにデータを分離できる設計になっています。
+React / TypeScript を中心に、状態管理・ルーティング・API連携・認証を一通り経験することを目的に開発しました。
 
 ## セットアップ手順
 1. リポジトリを clone
@@ -13,12 +14,16 @@ cd todo_react
 2. インストール
 npm install
 
-3. サーバーを起動
+3. 環境変数の設定
+VITE_SUPABASE_URL=あなたのSupabaseのURL
+VITE_SUPABASE_ANON_KEY=あなたのSupabaseのAnon Key
+VITE_OPENWEATHER_API_KEY=あなたのOpenWeather API Key
+
+
+4. サーバーを起動
 npm run dev
 http://localhost:5173 にアクセス
 
-4. JSON Server を起動
-npx json-server --watch db.json --port 3001
 
 
 ## リンク(Vercelでデプロイした動作確認ページ)
@@ -32,8 +37,13 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - 完了/未完了の切り替え
 - フィルタリング（全て / 完了 / 未完了）
 - タスクの検索
-- ページ追加
-- OpenWeather API で東京の天気を取得
+- ページ追加,削除
+- OpenWeather API で天気を取得
+
+## 認証機能
+- Supabase Auth を利用したログイン / 新規登録
+- ログインなしでもアプリ利用可能
+- ログイン時はユーザーごとにデータを分離
 
 ## 使用技術
 - TypeScript
@@ -41,23 +51,24 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - Vite
 - Bootstrap 5
 - Axios
-- json-server
+- Supabase
 - OpenWeather API
 - vitest + React Testing Library
 - Cypress
 
 ## 工夫した点 / 学び
 - TypeScript で型定義を行い、安全な状態管理
-- `json-server`を使ったデータ保存 
+- Supabaseを使ったデータ保存 
+- Supabase Authを使った認証機能の実装
 - API Key を `.env` ファイルで管理
 - UI/UX 改善のため検索やフィルタリングを導入
-- Cypress,Jestでの自動テスト
+- Cypress,Vitestでの自動テスト
 
 ## 今後やりたいこと
 - 更なるテストコード
 - UI改善やデザイン向上
-- ログイン機能や、バックエンドとの連携
+- バックエンド言語
 
 ## 作者
 大学2年 / フロントエンドエンジニア志望  
-長期インターンを目指して学習中 🚀
+
