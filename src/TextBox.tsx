@@ -28,13 +28,12 @@ function reducer(state: typeof initialState, action: any): typeof initialState {
     case 'SET_TEXTS':
       return { ...state, texts: action.payload };
 
-    
  case 'DELETE_TODO':
-  axios.delete(`http://localhost:3001/todos/${action.payload}`);
   return {
     ...state,
     list: state.list.filter((item) => item.id !== action.payload),
   };
+
 
      case 'SWITCH_TODO':
   const switchTarget = state.list.find(item => item.id === action.payload);
@@ -87,11 +86,23 @@ export default function TextBox() {
 
 
 useEffect(() => {
-  axios.get("http://localhost:3001/todos")
-    .then((res) => {
-      dispatch({ type: 'SET_LIST', payload: res.data });
-    });
-}, []);
+  const fetchTodos = async () => {
+    const { data, error } = await supabase
+      .from('todos')
+      .select('*')
+
+    if (!error) {
+      dispatch({ type: 'SET_LIST', payload: data })
+    }
+  }
+
+  fetchTodos()
+}, [])
+
+const deleteTodo = async (id: number) => {
+  await supabase.from('todos').delete().eq('id', id)
+  dispatch({ type: 'DELETE_TODO', payload: id })
+}
 
 
 
@@ -120,34 +131,44 @@ useEffect(() => {
         placeholder="タスクを追加"
       />
       
-      <button
-       data-test="add-task"
-       className="btn btn-primary"
-       style={{ height: '45px'}}
-       onClick={() => {
-       if (state.texts === '') {
-        alert('空欄です');
-       return;
-       }
-       if (state.texts.length > 30) {
-        alert('30文字以内で入力してください');
-        return;
-      }
+     <button
+  data-test="add-task"
+  className="btn btn-primary"
+  style={{ height: '45px' }}
+  onClick={async () => {
+    if (state.texts === '') {
+      alert('空欄です');
+      return;
+    }
 
-      axios.post("http://localhost:3001/todos", {
-       text: state.texts,
-       isCompleted: false
-      }).then(res => {
-      dispatch({
-        type: 'SET_LIST',
-        payload: [...state.list, res.data],
-         });
-      dispatch({ type: 'SET_TEXTS', payload: '' });
-      });
-     }}
-      >
-       追加
-     </button>
+    if (state.texts.length > 30) {
+      alert('30文字以内で入力してください');
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('todos')
+      .insert([
+        { text: state.texts, is_completed: false }
+      ])
+      .select();
+
+    if (error) {
+      alert('追加に失敗しました');
+      return;
+    }
+
+    dispatch({
+      type: 'SET_LIST',
+      payload: [...state.list, data![0]],
+    });
+
+    dispatch({ type: 'SET_TEXTS', payload: '' });
+  }}
+>
+  追加
+</button>
+
      </div>
 
      <FilterButtons
@@ -167,7 +188,8 @@ useEffect(() => {
             Edit={(id) => dispatch({ type: 'EDIT', payload: id })}
             ConfirmEdit={() => dispatch({ type: 'CONFIRM_EDIT' })}
             Switch={(id) => dispatch({ type: 'SWITCH_TODO', payload: id })}
-            Delete={(id) => dispatch({ type: 'DELETE_TODO', payload: id })}
+            Delete={(id) => deleteTodo(id)}
+
           />
         ))}
       </div>

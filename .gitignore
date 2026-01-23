@@ -24,7 +24,7 @@ dist-ssr
 *.sw?
 
 .env
-
+supabaseClient.ts
 *.js
 *.js.map
 *.d.ts
