@@ -2,7 +2,7 @@
 
 インターン経験を基に作成した ToDo アプリです。
 Supabase を使ったタスク管理機能、ログイン機能に加えて、OpenWeather API を利用した「天気表示」を実装しています。
-ログイン なしでも利用可能 ですが、ログインすることでユーザーごとにデータを分離できる設計になっています。
+また、ログイン履歴の記録・タスク統計の集計が可能です。
 React / TypeScript を中心に、状態管理・ルーティング・API連携・認証を一通り経験することを目的に開発しました。
 
 ## セットアップ手順
@@ -21,6 +21,8 @@ VITE_OPENWEATHER_API_KEY=あなたのOpenWeather API Key
 
 
 4. サーバーを起動
+node index.js
+↓
 npm run dev
 http://localhost:5173 にアクセス
 
@@ -34,11 +36,12 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 
 ## 機能
 - ToDo の追加・編集・削除
-- 完了/未完了の切り替え
 - フィルタリング（全て / 完了 / 未完了）
 - タスクの検索
 - ページ追加,削除
 - OpenWeather API で天気を取得
+- ログイン履歴の記録
+- タスクの統計表示
 
 ## 認証機能
 - Supabase Auth を利用したログイン / 新規登録
@@ -53,6 +56,7 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - Axios
 - Supabase
 - OpenWeather API
+- Node.js express
 - vitest + React Testing Library
 - Cypress
 
@@ -67,7 +71,7 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 ## 今後やりたいこと
 - 更なるテストコード
 - UI改善やデザイン向上
-- バックエンド言語
+- 実務経験
 
 ## 作者
 大学2年 / フロントエンドエンジニア志望  
