@@ -247,9 +247,8 @@ export default function TextBox({ pagePath }: Props) {
 
 
 
-// json-server --watch db.json --port 3001
-// npx json-server --watch db.json --port 3001
 
 // npm run dev
+//  node index.js
 // npx cypress open
 // npx cypress run

@@ -101,28 +101,45 @@ const deletePage = async (path: string) => {
     <div className="container">
       <h1>ポートフォリオ</h1>
 {!user ? (
-  <button
-    className="btn btn-sm btn-outline-primary"
-    onClick={async () => {
-      const email = prompt("メールアドレス");
-      const password = prompt("パスワード");
 
-      if (!email || !password) return;
+<button
+  className="btn btn-sm btn-outline-primary"
+  onClick={async () => {
+    const email = prompt("メールアドレス");
+    const password = prompt("パスワード");
 
-      await supabase.auth.signInWithPassword({
-        email,
-        password,
+    if (!email || !password) return;
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      alert("ログイン失敗: " + error.message);
+      return;
+    }
+
+    try {
+      await fetch('http://localhost:5000/api/log-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email }),
       });
-      
-      await supabase.auth.signUp({
-  email,
-  password,
-});
+      console.log("バックエンドへのログ送信完了");
+    } catch (err) {
+      console.error("ログ送信失敗（サーバー動いてる？）:", err);
+    }
+    
+   
+  }}
+>
+  ログイン
+</button>
 
-    }}
-  >
-    ログイン
-  </button>
+
 ) : (
   <button
     className="btn btn-sm btn-outline-secondary"
