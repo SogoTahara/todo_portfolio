@@ -249,6 +249,6 @@ export default function TextBox({ pagePath }: Props) {
 
 
 // npm run dev
-//  node index.js
+// cd server     node index.js
 // npx cypress open
 // npx cypress run

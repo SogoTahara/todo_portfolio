@@ -33,6 +33,7 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 
 ## 見た目
 ![スクリーンショット](./images/image.png)
+![スクリーンショット](./images/image2.png)
 
 ## 機能
 - ToDo の追加・編集・削除

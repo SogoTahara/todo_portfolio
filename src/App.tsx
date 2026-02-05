@@ -1,4 +1,4 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom"; // ★1. useLocationを追加
 import TextBox from "./TextBox";
 import WeatherBox from "./components/WeatherBox";
 import { useEffect, useState } from "react";
@@ -8,11 +8,25 @@ export default function App() {
   const [user, setUser] = useState<any>(null);
   const [pages, setPages] = useState<{ name: string; path: string }[]>([]);
   const [newPage, setNewPage] = useState("");
-  
-  // ★統計データ用のState
   const [taskStats, setTaskStats] = useState({ completed: 0, pending: 0 });
+  
+  // ★2. 現在のURL情報を取得するフック
+  const location = useLocation();
 
-  // ページ一覧を取得
+  // ★3. URLに応じてヘッダーのタイトルを決める関数（修正版）
+  const getHeaderTitle = () => {
+    // URLエンコードされた文字（%xx...）を元の文字に戻す
+    const currentPath = decodeURIComponent(location.pathname);
+
+    if (currentPath === "/") return "Home";
+    if (currentPath === "/weather") return "Weather";
+    
+    // デコードしたパスを使って検索する
+    const currentPage = pages.find((p) => p.path === currentPath);
+    return currentPage ? currentPage.name : "My ToDo App";
+  };
+
+  // ページ一覧取得
   useEffect(() => {
     const fetchPages = async () => {
       const { data, error } = await supabase.from("pages").select("*");
@@ -20,219 +34,207 @@ export default function App() {
         setPages(
           data
             .filter((page) => page.path !== "/" && page.path !== "/weather")
-            .map((page) => ({
-              path: page.path,
-              name: page.name,
-            }))
+            .map((page) => ({ path: page.path, name: page.name }))
         );
       }
     };
     fetchPages();
   }, []);
 
-  // ユーザー情報を取得 & ログイン監視
+  // ユーザー監視 & 統計取得
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data.user);
     };
-
     getUser();
-
     supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
   }, []);
 
-  // ★統計を取得する関数
   const fetchTaskStats = async (userEmail: string) => {
     try {
-      // バックエンドのAPIを叩く
       const res = await fetch(`http://localhost:5000/api/task-stats?email=${userEmail}`);
       const data = await res.json();
-      
-      if (res.ok) {
-        setTaskStats({ completed: data.completed, pending: data.pending });
-      }
+      if (res.ok) setTaskStats({ completed: data.completed, pending: data.pending });
     } catch (err) {
-      console.error("統計取得失敗:", err);
+      console.error(err);
     }
   };
 
-  // ユーザーが変わったら統計を取得
   useEffect(() => {
-    if (user?.email) {
-      fetchTaskStats(user.email);
-    }
+    if (user?.email) fetchTaskStats(user.email);
   }, [user]);
 
-  // ページ追加処理
+  // ログイン・登録処理
+  const handleLogin = async () => {
+    const email = prompt("メールアドレス");
+    const password = prompt("パスワード");
+    if (!email || !password) return;
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      await supabase.auth.signUp({ email, password });
+    } else {
+      try {
+        await fetch('http://localhost:5000/api/log-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   const addPage = async () => {
     if (!newPage) return;
     const path = "/" + newPage;
-    if (pages.some((p) => p.path === path)) {
-      alert("同じページ名が存在します");
-      return;
+    if (pages.some((p) => p.path === path)) return alert("重複しています");
+    const { error } = await supabase.from("pages").insert([{ path, name: newPage }]);
+    if (!error) {
+      setPages([...pages, { path, name: newPage }]);
+      setNewPage("");
     }
-    const { error } = await supabase
-      .from("pages")
-      .insert([{ path, name: newPage }])
-      .select();
-    if (error) {
-      alert("ページ追加に失敗しました");
-      return;
-    }
-    setPages([...pages, { path, name: newPage }]);
-    setNewPage("");
   };
 
-  // ページ削除処理
   const deletePage = async (path: string) => {
-    const confirmDelete = window.confirm("このページを削除しますか？");
-    if (!confirmDelete) return;
-    const deletePage = async (path: string) => {
-  const confirmDelete = window.confirm("このページと、含まれるタスクを全て削除しますか？");
-  if (!confirmDelete) return;
-
-  // 1. 先にそのページのタスクを全削除
-  await supabase
-    .from("todos")
-    .delete()
-    .eq("page_path", path);
-
-  // 2. その後でページ自体を削除
-  const { error } = await supabase
-    .from("pages")
-    .delete()
-    .eq("path", path);
-
-  if (error) {
-    alert("削除に失敗しました");
-    return;
-  }
-  setPages(pages.filter((page) => page.path !== path));
-};
-    
+    if (!window.confirm("削除しますか？")) return;
+    await supabase.from("todos").delete().eq("page_path", path);
+    const { error } = await supabase.from("pages").delete().eq("path", path);
+    if (!error) setPages(pages.filter((page) => page.path !== path));
   };
 
   return (
-    <div className="container">
-      <h1>ポートフォリオ</h1>
-      
-      {/* ログイン・ログアウトボタン */}
-      {!user ? (
-        <button
-          className="btn btn-sm btn-outline-primary"
-          onClick={async () => {
-            const email = prompt("メールアドレス");
-            const password = prompt("パスワード");
-            if (!email || !password) return;
-
-            // 1. Supabaseログイン
-            const { error } = await supabase.auth.signInWithPassword({
-              email,
-              password,
-            });
-
-            if (error) {
-               // ログイン失敗ならサインアップを試す（元のコードの挙動を維持）
-               await supabase.auth.signUp({ email, password });
-            } else {
-               // 2. ログイン成功時のみバックエンドへ履歴送信
-               try {
-                 await fetch('http://localhost:5000/api/log-login', {
-                   method: 'POST',
-                   headers: { 'Content-Type': 'application/json' },
-                   body: JSON.stringify({ email: email }),
-                 });
-               } catch(e) {
-                 console.error(e);
-               }
-            }
-          }}
-        >
-          ログイン
-        </button>
-      ) : (
-        <button
-          className="btn btn-sm btn-outline-secondary"
-          onClick={() => supabase.auth.signOut()}
-        >
-          ログアウト
-        </button>
-      )}
-
-      {/* ★ログイン時のみ表示するタスク統計エリア */}
-      {user && (
-        <div style={{ 
-          border: '1px solid #ccc', 
-          padding: '10px', 
-          margin: '15px 0', 
-          borderRadius: '8px',
-          backgroundColor: '#f8f9fa'
-        }}>
-          <h5 className="mb-2">現在のタスク集計</h5>
-          <div className="d-flex align-items-center gap-3">
-            <span className="text-success fw-bold">
-              完了: {taskStats.completed}
-            </span>
-            <span className="text-danger fw-bold">
-              未完了: {taskStats.pending}
-            </span>
-            <button 
-              className="btn btn-sm btn-outline-dark ms-auto"
-              onClick={() => user.email && fetchTaskStats(user.email)}
-            >
-              更新
-            </button>
-          </div>
+    <div className="container-fluid p-0">
+      {/* --- 上部ヘッダー --- */}
+      <header className="bg-dark text-white p-3 d-flex align-items-center justify-content-between sticky-top">
+        <div className="d-flex align-items-center">
+          <button
+            className="btn btn-outline-light me-3"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#sidebarMenu"
+          >
+            ☰
+          </button>
+          
+          {/* ★4. ここを関数呼び出しに変更！ */}
+          <h1 className="h4 mb-0">{getHeaderTitle()}</h1>
         </div>
-      )}
+      </header>
 
-      <nav className="mb-3 mt-3">
-        <Link to="/" className="me-2">Home</Link>
-        <Link to="/weather" className="me-2">Weather</Link>
-        {pages.map((page) => (
-          <span key={page.path} className="me-3">
-            <Link to={page.path} className="me-1">{page.name}</Link>
-            {user && (
-              <button
-                className="btn btn-sm btn-outline-danger px-1 py-0"
-                onClick={() => deletePage(page.path)}
+      {/* --- サイドバーメニュー --- */}
+      <div className="offcanvas offcanvas-start" tabIndex={-1} id="sidebarMenu">
+        <div className="offcanvas-header border-bottom">
+          <h5 className="offcanvas-title">メニュー</h5>
+          <button type="button" className="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+
+        <div className="offcanvas-body d-flex flex-column">
+          <h6 className="text-muted small text-uppercase fw-bold mt-2">ページ一覧</h6>
+          <nav className="nav flex-column mb-auto">
+            <Link to="/" className="nav-link px-0 text-dark" data-bs-dismiss="offcanvas">
+              🏠 Home
+            </Link>
+            {pages.map((page) => (
+              <div
+                key={page.path}
+                className="d-flex align-items-center justify-content-between border-bottom py-1"
               >
-                ×
+                <Link
+                  to={page.path}
+                  className="nav-link px-0 text-dark flex-grow-1"
+                  data-bs-dismiss="offcanvas"
+                >
+                  📄 {page.name}
+                </Link>
+                {user && (
+                  <button className="btn btn-sm text-danger" onClick={() => deletePage(page.path)}>
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {user && (
+              <div className="mt-3">
+                <input
+                  type="text"
+                  value={newPage}
+                  onChange={(e) => setNewPage(e.target.value)}
+                  className="form-control form-control-sm mb-2"
+                  placeholder="新しいページ名"
+                />
+                <button className="btn btn-sm btn-primary w-100" onClick={addPage}>
+                  ページ追加
+                </button>
+              </div>
+            )}
+          </nav>
+
+          {/* 下部固定エリア */}
+          <div className="mt-auto pt-3 border-top">
+            <div className="mb-3">
+              <WeatherBox />
+            </div>
+            {!user ? (
+              <button className="btn btn-primary w-100" onClick={handleLogin}>
+                ログイン
+              </button>
+            ) : (
+              <button
+                className="btn btn-outline-secondary w-100"
+                onClick={() => supabase.auth.signOut()}
+              >
+                ログアウト
               </button>
             )}
-          </span>
-        ))}
-      </nav>
-
-      {user && (
-        <div className="mb-3">
-          <input
-            type="text"
-            value={newPage}
-            onChange={(e) => setNewPage(e.target.value)}
-            placeholder="新しいページ名"
-            className="border border-dark me-2"
-          />
-          <button className="btn btn-sm btn-primary" onClick={addPage}>
-            ページ追加
-          </button>
+          </div>
         </div>
-      )}
+      </div>
 
-      <Routes>
-        <Route path="/" element={<TextBox pagePath="/" />} />
-        <Route path="/weather" element={<WeatherBox />} />
-        {pages.map((page) => (
-          <Route
-            key={page.path}
-            path={page.path}
-            element={<TextBox pagePath={page.path} />}
-          />
-        ))}
-      </Routes>
+      {/* --- メインコンテンツ --- */}
+      <main className="container py-4">
+        {/* 統計ボックス（修正済み） */}
+        {user && (
+          <div
+            style={{
+              border: "1px solid #ccc",
+              padding: "10px",
+              marginBottom: "20px",
+              borderRadius: "8px",
+              backgroundColor: "#f8f9fa",
+            }}
+          >
+            <h5 className="mb-2">📊 現在のタスク集計</h5>
+            <div className="d-flex align-items-center gap-3">
+              <span className="text-success fw-bold">完了: {taskStats.completed}</span>
+              <span className="text-danger fw-bold">未完了: {taskStats.pending}</span>
+              <button
+                className="btn btn-sm btn-outline-dark ms-auto"
+                onClick={() => user?.email && fetchTaskStats(user.email)}
+              >
+                更新
+              </button>
+            </div>
+          </div>
+        )}
+
+        <Routes>
+          <Route path="/" element={<TextBox pagePath="/" />} />
+          <Route path="/weather" element={<WeatherBox />} />
+          {pages.map((page) => (
+            <Route
+              key={page.path}
+              path={page.path}
+              element={<TextBox pagePath={page.path} />}
+            />
+          ))}
+        </Routes>
+      </main>
     </div>
   );
 }
