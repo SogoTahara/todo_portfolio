@@ -75,5 +75,5 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - 実務経験
 
 ## 作者
-大学2年 / フロントエンドエンジニア志望  
+大学2年 / エンジニア志望  
 
