@@ -8,8 +8,8 @@ React / TypeScript を中心に、状態管理・ルーティング・API連携�
 ## セットアップ手順
 1. リポジトリを clone
  bash
-git clone https://github.com/SogoTahara/todo_react.git
-cd todo_react
+git clone https://github.com/SogoTahara/todo_portfolio.git
+cd todo_portfolio
 
 2. インストール
 npm install
