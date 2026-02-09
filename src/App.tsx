@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useLocation } from "react-router-dom"; // ★1. useLocationを追加
+import { Routes, Route, Link, useLocation } from "react-router-dom"; 
 import TextBox from "./TextBox";
 import WeatherBox from "./components/WeatherBox";
 import { useEffect, useState } from "react";
@@ -10,23 +10,18 @@ export default function App() {
   const [newPage, setNewPage] = useState("");
   const [taskStats, setTaskStats] = useState({ completed: 0, pending: 0 });
   
-  // ★2. 現在のURL情報を取得するフック
   const location = useLocation();
 
-  // ★3. URLに応じてヘッダーのタイトルを決める関数（修正版）
   const getHeaderTitle = () => {
-    // URLエンコードされた文字（%xx...）を元の文字に戻す
     const currentPath = decodeURIComponent(location.pathname);
 
     if (currentPath === "/") return "Home";
     if (currentPath === "/weather") return "Weather";
     
-    // デコードしたパスを使って検索する
     const currentPage = pages.find((p) => p.path === currentPath);
     return currentPage ? currentPage.name : "My ToDo App";
   };
 
-  // ページ一覧取得
   useEffect(() => {
     const fetchPages = async () => {
       const { data, error } = await supabase.from("pages").select("*");
@@ -41,7 +36,6 @@ export default function App() {
     fetchPages();
   }, []);
 
-  // ユーザー監視 & 統計取得
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
@@ -67,7 +61,6 @@ export default function App() {
     if (user?.email) fetchTaskStats(user.email);
   }, [user]);
 
-  // ログイン・登録処理
   const handleLogin = async () => {
     const email = prompt("メールアドレス");
     const password = prompt("パスワード");
@@ -109,7 +102,6 @@ export default function App() {
 
   return (
     <div className="container-fluid p-0">
-      {/* --- 上部ヘッダー --- */}
       <header className="bg-dark text-white p-3 d-flex align-items-center justify-content-between sticky-top">
         <div className="d-flex align-items-center">
           <button
@@ -121,12 +113,10 @@ export default function App() {
             ☰
           </button>
           
-          {/* ★4. ここを関数呼び出しに変更！ */}
           <h1 className="h4 mb-0">{getHeaderTitle()}</h1>
         </div>
       </header>
 
-      {/* --- サイドバーメニュー --- */}
       <div className="offcanvas offcanvas-start" tabIndex={-1} id="sidebarMenu">
         <div className="offcanvas-header border-bottom">
           <h5 className="offcanvas-title">メニュー</h5>
@@ -175,7 +165,6 @@ export default function App() {
             )}
           </nav>
 
-          {/* 下部固定エリア */}
           <div className="mt-auto pt-3 border-top">
             <div className="mb-3">
               <WeatherBox />
@@ -196,9 +185,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* --- メインコンテンツ --- */}
       <main className="container py-4">
-        {/* 統計ボックス（修正済み） */}
         {user && (
           <div
             style={{
