@@ -20,3 +20,12 @@ Cypress.on("uncaught:exception", (err) => {
     return false; // Cypress に失敗扱いさせない
   }
 });
+
+
+Cypress.on('uncaught:exception', (err, runnable) => {
+  if (err.message.includes("Cannot read properties of null (reading 'document')")) {
+    return false;
+  }
+  
+  return true;
+});

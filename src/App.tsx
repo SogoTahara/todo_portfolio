@@ -62,8 +62,8 @@ export default function App() {
   }, [user]);
 
   const handleLogin = async () => {
-    const email = prompt("メールアドレス");
-    const password = prompt("パスワード");
+    const email = prompt('メールアドレス   "login@login" をコピペしてください！');
+    const password = prompt('パスワード    "login123" をコピペしてください');
     if (!email || !password) return;
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -185,42 +185,55 @@ export default function App() {
         </div>
       </div>
 
-      <main className="container py-4">
-        {user && (
-          <div
-            style={{
-              border: "1px solid #ccc",
-              padding: "10px",
-              marginBottom: "20px",
-              borderRadius: "8px",
-              backgroundColor: "#f8f9fa",
-            }}
-          >
-            <h5 className="mb-2">📊 現在のタスク集計</h5>
-            <div className="d-flex align-items-center gap-3">
-              <span className="text-success fw-bold">完了: {taskStats.completed}</span>
-              <span className="text-danger fw-bold">未完了: {taskStats.pending}</span>
-              <button
-                className="btn btn-sm btn-outline-dark ms-auto"
-                onClick={() => user?.email && fetchTaskStats(user.email)}
-              >
-                更新
-              </button>
+     <main className="container py-4">
+        
+        <div
+          style={{
+            border: "1px solid #ccc",
+            padding: "15px",
+            marginBottom: "20px",
+            borderRadius: "8px",
+            backgroundColor: "#f8f9fa",
+          }}
+        >
+          {user ? (
+            <>
+              <h5 className="mb-2">📊 現在のタスク集計</h5>
+              <div className="d-flex align-items-center gap-3">
+                <span className="text-success fw-bold">
+                  完了: {taskStats.completed}
+                </span>
+                <span className="text-danger fw-bold">
+                  未完了: {taskStats.pending}
+                </span>
+                <button
+                  className="btn btn-sm btn-outline-dark ms-auto"
+                  onClick={() => user.email && fetchTaskStats(user.email)}
+                >
+                  更新
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="d-flex align-items-center justify-content-center text-muted gap-2">
+              <span> ログインするとタスク統計などの機能が使えます</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+        
 
-        <Routes>
-          <Route path="/" element={<TextBox pagePath="/" />} />
-          <Route path="/weather" element={<WeatherBox />} />
-          {pages.map((page) => (
-            <Route
-              key={page.path}
-              path={page.path}
-              element={<TextBox pagePath={page.path} />}
-            />
-          ))}
-        </Routes>
+ <Routes>
+  <Route path="/" element={<TextBox pagePath="/" user={user} />} />
+  <Route path="/weather" element={<WeatherBox />} />
+  
+  {pages.map((page) => (
+    <Route
+      key={page.path}
+      path={page.path}
+      element={<TextBox pagePath={page.path} user={user} />}
+    />
+  ))}
+</Routes>
       </main>
     </div>
   );

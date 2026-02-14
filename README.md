@@ -2,7 +2,8 @@
 
 インターン経験を基に作成した ToDo アプリです。
 Supabase を使ったタスク管理機能、ログイン機能に加えて、OpenWeather API を利用した「天気表示」を実装しています。
-また、ログイン履歴の記録・タスク統計の集計が可能です。
+ログイン履歴の記録・タスク統計の集計が可能です。
+また、cypressでE2Eテストを実装しました。
 React / TypeScript を中心に、状態管理・ルーティング・API連携・認証を一通り経験することを目的に開発しました。
 
 ## セットアップ手順
@@ -20,11 +21,13 @@ VITE_SUPABASE_ANON_KEY=あなたのSupabaseのAnon Key
 VITE_OPENWEATHER_API_KEY=あなたのOpenWeather API Key
 
 
-4. サーバーを起動
-node index.js
-↓
-npm run dev
-http://localhost:5173 にアクセス
+4. 起動
+・サーバー起動
+　node index.js
+
+・フロントエンド起動
+　npm run dev
+　http://localhost:5173 にアクセス
 
 
 
@@ -62,12 +65,10 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - Cypress
 
 ## 工夫した点 / 学び
-- TypeScript で型定義を行い、安全な状態管理
-- Supabaseを使ったデータ保存 
-- Supabase Authを使った認証機能の実装
+- Supabase,Expressを使ってフルスタックな構成に
 - API Key を `.env` ファイルで管理
-- UI/UX 改善のため検索やフィルタリングを導入
-- Cypress,Vitestでの自動テスト
+- UI/UX 改善のため検索やフィルタリング、未ログイン時に操作しようとした際のア　ラート誘導など
+- Cypressを用い、タスク操作やログインの流れを自動テスト
 
 ## 今後やりたいこと
 - 更なるテストコード
