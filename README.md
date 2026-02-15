@@ -75,6 +75,7 @@ https://todo-react-git-main-sougos-projects-21194172.vercel.app?_vercel_share=1S
 - 更なるテストコード
 - UI改善やデザイン向上
 - 実務経験
+- 資格の勉強
 
 ## 作者
 大学2年 / エンジニア志望  
